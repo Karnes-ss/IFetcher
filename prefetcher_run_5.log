@@ -1,0 +1,294 @@
+=== Prefetcher System Started ===
+[INOTIFY] Initialized (fd=3)
+[LOG PARSER] Added watch: /usr/lib/firefox/libnspr4.so (wd=1)
+[LOG PARSER] Prefetch list built for trigger (wd=1): 16 files
+[MAIN] Watch map entries: 1
+[MAIN] Created app process (PID: 6494)
+[MAIN] Waiting for trigger file access...
+
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796585035520) for 16 files
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH] Created thread (TID: 139796471076608) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796462683904) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796454291200) for 16 files
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libm*** You are running in headless mode.
+ozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Finished
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796462683904) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796454291200) for 16 files
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Finished
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796454291200) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796462683904) for 16 files
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Finished
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796462683904) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH] Created thread (TID: 139796454291200) for 16 files
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Finished
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796454291200) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796487862016) for 16 files
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Finished
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796487862016) for 16 files
+[MAIN] Detected trigger file access (WD: 1)
+[PREFETCH] Created thread (TID: 139796454291200) for 16 files
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Finished
+[PREFETCH THREAD] Started (files to prefetch: 16, concurrency=4)
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplc4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libplds4.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsandbox.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libgkcodecs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnssutil3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libnss3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libsmime3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozsqlite3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/liblgpllibs.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libssl3.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libxul.so
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gio/modules/giomodule.cache
+[PREFETCH THREAD] Success: /usr/share/themes/Yaru/gtk-3.20/gtk.css
+[PREFETCH THREAD] Success: /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozgtk.so
+[PREFETCH THREAD] Success: /usr/lib/firefox/libmozwayland.so
+[PREFETCH THREAD] Finished
+
+[MAIN] App exited normally (exit code: 0)
+
+=== Cleaning up resources ===
+=== Prefetcher System Exited ===
