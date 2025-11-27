@@ -10,7 +10,6 @@
 
 用于编译测试程序及相关依赖。
 
-Bash
 
 ```
 sudo apt update && sudo apt install -y build-essential
@@ -35,7 +34,6 @@ sudo apt install -y procps psmisc
 
 1. 进入项目目录：
     
-    Bash
     
     ```
     cd IFetcher
@@ -43,7 +41,6 @@ sudo apt install -y procps psmisc
     
 2. 执行自动化测试脚本：
     
-    Bash
     
     ```
     bash run_tight_flow.sh
