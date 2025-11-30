@@ -56,14 +56,42 @@ stop_virtual_display() {
     fi
 }
 
-get_pf() {
-    local pid=$1
-    if [ -f "/proc/$pid/stat" ]; then
-        awk '{print $12}' "/proc/$pid/stat"
-    else
-        echo "0"
-    fi
+
+# 读取 /tmp/read_log 并用 I/O 间隙检测计算地图加载时间
+calc_smart_load_time() {
+  local READ_LOG="/tmp/read_log"
+  local START_TS_FILE="$ROOT_DIR/.drive_start_ts"
+  if [[ ! -f "$READ_LOG" || ! -f "$START_TS_FILE" ]]; then echo "0.0000"; return; fi
+  local TRIG_TS; TRIG_TS=$(cat "$START_TS_FILE")
+  gawk -v TRIG_TS="$TRIG_TS" '
+    function get_epoch_float(ts){
+      if (match(ts,/^[0-9]+\.[0-9]+$/)) return ts+0;
+      if (match(ts,/[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}/)) {
+        d=substr(ts,RSTART,RLENGTH); gsub(/[- :]/," ",d); s=mktime(d);
+        if (match(ts,/\.[0-9]+/)) { f=substr(ts,RSTART,RLENGTH)+0.0; return s+f }
+        return s
+      }
+      return 0
+    }
+    function get_ts(line){ if (match(line,/^\[[^]]+\]/)) return substr(line,RSTART+1,RLENGTH-2); return "" }
+    BEGIN{start_t=0; last_t=0; end_t=0; io_count=0; GAP=0.5}
+    {
+      if ($0!~/Type:(READ|FREAD|MMAP)/) next;
+      if ($0!~/\.(png|jpg|xml|level|wav|ogg|tga|texture)/) next;
+      t=get_ts($0); ct=get_epoch_float(t);
+      if (ct<=0) next; if (ct<TRIG_TS) next; if (ct>TRIG_TS+15.0) next;
+      if (start_t==0){ start_t=ct; last_t=ct; end_t=ct; io_count++; next }
+      diff=ct-last_t; if (diff>GAP && io_count>5) { exit }
+      last_t=ct; end_t=ct; io_count++
+    }
+    END{
+      if (start_t>0 && end_t>=start_t){ d=end_t-start_t; if (d<0.01) d=0.01; printf("%.4f",d) }
+      else { print "0.0000" }
+    }
+  ' "$READ_LOG"
 }
+
+
 
 wait_for_window() {
     echo "   [Bot] Waiting for window..."
@@ -167,7 +195,32 @@ echo " PHASE 2: Analyzer (Triggers & Prefetch Lists)"
 echo "==================================================="
 cd analyzer
 rm -f trigger_log.txt prefetch_log.txt
-IFETCHER_MAX_TRIGGERS=${IFETCHER_MAX_TRIGGERS:-3} IFETCHER_PREFETCH_TOP_N=${IFETCHER_PREFETCH_TOP_N:-12} ./analyzer_tight >/dev/null
+IFETCHER_LOG_DIR=/tmp \
+IFETCHER_ALLOW_MMAP_ONLY=1 \
+IFETCHER_DATA_DIR="$DATA_DIR" \
+IFETCHER_MAX_TRIGGERS=${IFETCHER_MAX_TRIGGERS:-3} \
+IFETCHER_PREFETCH_TOP_N=${IFETCHER_PREFETCH_TOP_N:-12} \
+IFETCHER_WINDOW_SEC=${IFETCHER_WINDOW_SEC:-5} \
+IFETCHER_READ_THRESHOLD=${IFETCHER_READ_THRESHOLD:-1024} \
+IFETCHER_MIN_READS=${IFETCHER_MIN_READS:-1} \
+IFETCHER_MIN_BYTES=${IFETCHER_MIN_BYTES:-16384} \
+./analyzer_tight >/dev/null
+awk -F, '$1 !~ "^/(proc|sys|dev)/" {p=$1; cmd="[ -f \""p"\" ]"; if (system(cmd)==0) print}' trigger_log.txt > trigger_log.txt.tmp && mv trigger_log.txt.tmp trigger_log.txt
+if [ $(grep -cv '^APP=' trigger_log.txt 2>/dev/null || echo 0) -eq 0 ]; then
+  awk 'BEGIN{found=0}
+       /Type:MMAP/ {
+         if(found) next;
+         if (match($0, /File:[^|]*/)) {
+           p=substr($0, RSTART+5, RLENGTH-5);
+           if (p ~ /^\// && index(p, "/maps/")>0) {
+             print p ",0,4096" > "trigger_log.txt";
+             print "===TRIGGER===" > "prefetch_log.txt";
+             print p ",0,4096" >> "prefetch_log.txt";
+             found=1;
+           }
+         }
+       }' /tmp/mmap_log
+fi
 trig_cnt=$(grep -cv '^APP=' trigger_log.txt 2>/dev/null || echo 0)
 seg_cnt=$(grep -c '^===TRIGGER===' prefetch_log.txt 2>/dev/null || echo 0)
 echo "   -> Analyzer triggers: $trig_cnt segments: $seg_cnt"
@@ -198,13 +251,9 @@ run_test_round() {
     fi
     
     wait_for_window
-    PF_0=$(get_pf $GAME_PID)
-    
-    sleep 2.5 # Intro Wait
-    
-    PF_1=$(get_pf $GAME_PID)
-    
-    # （预取器持续运行，不再按 Event 切分）
+    rm -f /tmp/read_log /tmp/mmap_log /tmp/stat_log
+    (cd profiler && IFETCHER_LOG_DIR=/tmp IFETCHER_MONITOR_INTERVAL_MS=50 ./proc_monitor "$GAME_PID" >/dev/null 2>&1) &
+    MON_PID=$!
     
     # Bot Action: Select Single Race -> Car
     WIN_ID=$(xdotool search --onlyvisible --class "$WINDOW_CLASS" | head -n 1)
@@ -213,21 +262,22 @@ run_test_round() {
     xdotool windowactivate --sync $WIN_ID key Return
     sleep 1.0
     
-    PF_2=$(get_pf $GAME_PID)
-    TS_L_S=$(date +%s%N)
+    # 触发加载
+    date +%s.%N > "$ROOT_DIR/.drive_start_ts"
     xdotool windowactivate --sync $WIN_ID key Return
-    sleep 6.0
-    TS_L_E=$(date +%s%N)
-    PF_S=$(get_pf $GAME_PID)
+    
+    # 采集 I/O 一小段时间
+    sleep 12.0
+    LOAD_T=$(calc_smart_load_time)
     
     # 结束
+    kill -TERM "$MON_PID" 2>/dev/null || true
+    wait "$MON_PID" 2>/dev/null || true
     pkill -9 -x "trigger-rally"
     wait $GAME_PID 2>/dev/null || true
     stop_virtual_display
     
-    LOAD_PF=$((PF_S - PF_2))
-    LOAD_T=$(awk -v s="$TS_L_S" -v e="$TS_L_E" 'BEGIN{print (e-s)/1000000000}')
-    echo "$LOAD_PF,$LOAD_T" > "$outfile"
+    echo "$LOAD_T" > "$outfile"
 }
 
 echo ""
@@ -255,11 +305,10 @@ calc_avg() {
     fi
 }
 
-AVG_B_PF=$(calc_avg "base" 1); AVG_B_T=$(calc_avg "base" 2)
-AVG_P_PF=$(calc_avg "pref" 1); AVG_P_T=$(calc_avg "pref" 2)
+AVG_B_T=$(calc_avg "base" 1)
+AVG_P_T=$(calc_avg "pref" 1)
 
 printf "%-20s | %-15s | %-15s | %-10s\n" "METRIC" "BASELINE" "PREFETCH" "IMPROVE"
 echo "---------------------|-----------------|-----------------|----------"
 impr_t=$(awk "BEGIN {if ($AVG_B_T>0) print ($AVG_B_T - $AVG_P_T)/$AVG_B_T*100; else print 0}")
 printf "%-20s | %-15s | %-15s | %-6.2f%%\n" "Load Time (sec)" "$AVG_B_T" "$AVG_P_T" "$impr_t"
-printf "%-20s | %-15s | %-15s | %-10s\n" "Load PF" "$AVG_B_PF" "$AVG_P_PF" "-"
