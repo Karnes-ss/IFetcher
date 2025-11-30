@@ -77,6 +77,10 @@ static FileNode* build_segment_for_trigger(const char* prefetch_path,
             char* seg_path = NULL; off_t seg_off = 0; size_t seg_len = 0;
             if (!parse_log_line_parts(line, &seg_path, &seg_off, &seg_len)) continue;
             match = (strcmp(seg_path, trigger_path) == 0);
+            const char* inc = getenv("PREFETCH_INCLUDE_TRIGGER");
+            if (match && inc && strcmp(inc, "1") == 0) {
+                (void)list_add_node_ex(&lo, seg_path, seg_off, seg_len);
+            }
             continue;
         }
         if (!in_seg || !match) continue;

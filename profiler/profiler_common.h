@@ -42,6 +42,8 @@ typedef struct {
     off_t addr_start;      // mmap: 内存映射起始地址
     off_t addr_end;        // mmap: 内存映射结束地址
     off_t file_offset;     // mmap: 文件偏移（/proc/<pid>/maps 第三列）
+    int status;            // 0=OK, 1=ERR
+    int err_no;            // 当 status=ERR 时记录 errno
 } ProfilerLogEntry;
 
 // 日志初始化

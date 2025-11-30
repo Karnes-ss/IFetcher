@@ -61,6 +61,8 @@ static void* prefetch_worker(void* arg) {
             fprintf(stderr, "[PREFETCH ERROR] posix_fadvise failed for %s (err=%d)\n", node->path, err);
         }
         size_t to_read = (size_t)(ctx->touch_kb * 1024);
+        const char* rf = getenv("PREFETCH_READ_FULL");
+        if (rf && strcmp(rf, "1") == 0) to_read = len;
         if (to_read > len) to_read = len;
         if (to_read > 0) {
             char* buf = (char*)malloc(to_read);

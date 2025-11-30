@@ -14,6 +14,9 @@
 #include <sys/stat.h>
 #include <time.h>
 #include "reader.h"
+static char g_data_dir[256];
+static int get_env_int(const char* name, int defv){ const char* s=getenv(name); if(!s||!*s) return defv; char* e=NULL; long v=strtol(s,&e,10); if(e==s) return defv; return (int)v; }
+static double get_env_double(const char* name, double defv){ const char* s=getenv(name); if(!s||!*s) return defv; char* e=NULL; double v=strtod(s,&e); if(e==s) return defv; return v; }
 static int seen_in_reads_all(const ReadRecord* rr,int rc,const char* path){ if(!path) return 0; for(int i=0;i<rc;i++){ if(rr[i].file_path && strcmp(rr[i].file_path,path)==0) return 1; } return 0; }
 static void canonical_path(const char* in,char* out,size_t outsz){ if(!in){ if(outsz>0) out[0]='\0'; return;} char r[512]; char* rp = realpath(in, r); if(rp){ strncpy(out, rp, outsz-1); out[outsz-1]='\0'; } else { strncpy(out, in, outsz-1); out[outsz-1]='\0'; } }
 typedef struct { char path[256]; int off; int len; } Assigned;
@@ -27,20 +30,23 @@ static int assigned_paths_cnt = 0;
 static int assigned_path_has(const char* p){ if(!p) return 0; for(int i=0;i<assigned_paths_cnt;i++){ if(strcmp(assigned_paths[i].path,p)==0) return 1; } return 0; }
 static void assigned_path_add(const char* p){ if(!p) return; if(assigned_paths_cnt<MAX_RECORDS){ strncpy(assigned_paths[assigned_paths_cnt].path,p,sizeof(assigned_paths[assigned_paths_cnt].path)-1); assigned_paths[assigned_paths_cnt].path[sizeof(assigned_paths[assigned_paths_cnt].path)-1]='\0'; assigned_paths_cnt++; } }
 
-#define MAX_PREFETCH_PER_TRIGGER 16
-#define MAX_PREFETCH_BYTES  (128*1024)
-#define MAX_LEN_PER_ITEM    (64*1024)
-#define SAME_FILE_COOLDOWN_SEC 5.0
-#define READ_SIZE_THRESHOLD   4096
-#define PREFETCH_WINDOW_SEC   3.0
-#define MIN_WINDOW_READS      2
-#define MIN_WINDOW_BYTES      (32*1024)
+static int MAX_PREFETCH_PER_TRIGGER = 16;
+static int MAX_PREFETCH_BYTES  = (128*1024);
+static int MAX_LEN_PER_ITEM    = (64*1024);
+static double SAME_FILE_COOLDOWN_SEC = 5.0;
+static int READ_SIZE_THRESHOLD = 4096;
+static double PREFETCH_WINDOW_SEC = 3.0;
+static int MIN_WINDOW_READS = 2;
+static int MIN_WINDOW_BYTES = 32*1024;
 
 static int is_legal_path(const char *p) {
     if (!p || p[0] != '/') return 0;
     if (strncmp(p, "/proc/", 6) == 0) return 0;
     if (strncmp(p, "/sys/", 5) == 0) return 0;
     if (strncmp(p, "/dev/", 5) == 0) return 0;
+    if (strstr(p, "/usr/share/drirc.d/") == p) return 0;
+    if (g_data_dir[0] && strncmp(p, g_data_dir, strlen(g_data_dir)) == 0) return 1;
+    if (strstr(p, "/maps/") != NULL) return 1;
     if (strncmp(p, "/usr/", 5) == 0) return 1;
     if (strncmp(p, "/lib/", 5) == 0) return 1;
     if (strncmp(p, "/tmp/", 5) == 0) return 1;
@@ -50,10 +56,8 @@ static int is_legal_path(const char *p) {
 static int has_suffix(const char* p,const char* ext){ size_t lp=strlen(p), le=strlen(ext); if(lp<le) return 0; return strcmp(p+lp-le, ext)==0; }
 static int skip_ext_path(const char* path){
     if (has_suffix(path, ".ini")) return 1;
-    if (has_suffix(path, ".json")) return 1;
+    if (has_suffix(path, ".conf")) return 1;
     if (has_suffix(path, ".txt")) return 1;
-    if (has_suffix(path, ".png")) return 1;
-    if (has_suffix(path, ".svg")) return 1;
     return 0;
 }
 /* 触发器不强制扩展类型偏好，保留在预取项上做过滤 */
@@ -77,6 +81,18 @@ static void set_trigger_ts(const char *path, double ts, char paths[MAX_RECORDS][
 
 int main() {
     assigned_cnt = 0; assigned_paths_cnt = 0;
+
+    MAX_PREFETCH_PER_TRIGGER = get_env_int("IFETCHER_PREFETCH_TOP_N", 16);
+    SAME_FILE_COOLDOWN_SEC = get_env_double("IFETCHER_SAME_FILE_COOLDOWN_SEC", 5.0);
+    READ_SIZE_THRESHOLD = get_env_int("IFETCHER_READ_THRESHOLD", 4096);
+    PREFETCH_WINDOW_SEC = get_env_double("IFETCHER_WINDOW_SEC", 3.0);
+    MIN_WINDOW_READS = get_env_int("IFETCHER_MIN_READS", 2);
+    MIN_WINDOW_BYTES = get_env_int("IFETCHER_MIN_BYTES", 32*1024);
+    MAX_PREFETCH_BYTES = get_env_int("IFETCHER_MAX_PREFETCH_BYTES_KB", 128) * 1024;
+    MAX_LEN_PER_ITEM   = get_env_int("IFETCHER_MAX_LEN_PER_ITEM_KB", 64) * 1024;
+
+    const char* dd = getenv("IFETCHER_DATA_DIR");
+    if (dd && dd[0] != '\0') { strncpy(g_data_dir, dd, sizeof(g_data_dir)-1); g_data_dir[sizeof(g_data_dir)-1]='\0'; }
     const char *log_dir = getenv("IFETCHER_LOG_DIR");
     char read_path[256], mmap_path[256];
     if (log_dir && log_dir[0] != '\0') {
@@ -136,6 +152,18 @@ int main() {
         }
         fclose(fr);
     }
+    double start_ts = get_env_double("IFETCHER_START_TS", -1.0);
+    int allow_mmap_only = get_env_int("IFETCHER_ALLOW_MMAP_ONLY", 0);
+
+    fprintf(stderr, "[Analyzer] Loaded %d reads, %d mmaps\n", read_cnt, mmap_cnt);
+    if (start_ts > 0) {
+        int any_after = 0;
+        for (int i = 0; i < ec; i++) { if (events[i].ts >= start_ts) { any_after = 1; break; } }
+        if (!any_after) start_ts = -1.0;
+    }
+    fprintf(stderr, "[Analyzer] Start TS: %.2f\n", start_ts);
+    fprintf(stderr, "[Analyzer] READ_THRESHOLD: %d, COOLDOWN: %.2f, WINDOW: %.2f\n", READ_SIZE_THRESHOLD, SAME_FILE_COOLDOWN_SEC, PREFETCH_WINDOW_SEC);
+    fprintf(stderr, "[Analyzer] ALLOW_MMAP_ONLY: %d\n", allow_mmap_only);
 
     char cool_paths[MAX_RECORDS][256];
     double cool_tss[MAX_RECORDS];
@@ -144,17 +172,35 @@ int main() {
     typedef struct { int idx; long bsum; int rcnt; char path[256]; int off; int len; double ts; } Cand;
     Cand cand[MAX_RECORDS];
     int cand_cnt = 0;
+
+    int rejected_ts = 0;
+    int rejected_len = 0;
+    int rejected_mmap_rule = 0;
+    int rejected_path = 0;
+    int rejected_cooldown = 0;
+    int passed_cand = 0;
+
     for (int i = 0; i < ec; i++) {
+        if (start_ts>0 && events[i].ts < start_ts) { rejected_ts++; continue; }
         const char *path = NULL; int offset = 0, len = 0;
-        if (events[i].is_read) { ReadRecord *r = &reads[events[i].idx]; path = r->file_path; offset = r->offset; len = r->req_len; if (len < READ_SIZE_THRESHOLD) continue; }
-        else { MmapRecord *m = &mmaps[events[i].idx]; path = m->file_path; offset = m->file_offset; len = m->size; if (len < READ_SIZE_THRESHOLD) continue; if (!seen_in_reads_all(reads, read_cnt, path)) continue; }
-        if (!is_legal_path(path)) continue;
+        if (events[i].is_read) {
+            ReadRecord *r = &reads[events[i].idx]; path = r->file_path; offset = r->offset; len = r->req_len;
+            if (len < READ_SIZE_THRESHOLD) { rejected_len++; continue; }
+        } else {
+            MmapRecord *m = &mmaps[events[i].idx]; path = m->file_path; offset = m->file_offset; len = m->size;
+            if (len < READ_SIZE_THRESHOLD) { rejected_len++; continue; }
+            if (!allow_mmap_only && !seen_in_reads_all(reads, read_cnt, path)) { rejected_mmap_rule++; continue; }
+        }
+        if (!is_legal_path(path)) { rejected_path++; continue; }
         { char tp[512]; canonical_path(path, tp, sizeof(tp)); if (assigned_path_has(tp)) continue; }
         double last = last_trigger_ts(path, cool_paths, cool_tss, cool_cnt);
-        if (last >= 0 && (events[i].ts - last) < SAME_FILE_COOLDOWN_SEC) continue;
+        if (last >= 0 && (events[i].ts - last) < SAME_FILE_COOLDOWN_SEC) { rejected_cooldown++; continue; }
+        
+        passed_cand++;
         double t_end = events[i].ts + PREFETCH_WINDOW_SEC;
         long bsum = 0; int rcnt = 0;
         for (int j = i + 1; j < ec && events[j].ts <= t_end; j++) {
+            if (start_ts>0 && events[j].ts < start_ts) continue;
             const char *p2 = NULL; int l2 = 0;
             if (events[j].is_read) { p2 = reads[events[j].idx].file_path; l2 = reads[events[j].idx].req_len; }
             else { p2 = mmaps[events[j].idx].file_path; l2 = mmaps[events[j].idx].size; }
@@ -172,7 +218,7 @@ int main() {
         }
     }
     for (int a = 0; a < cand_cnt; a++) { for (int b = a + 1; b < cand_cnt; b++) { if (cand[b].bsum > cand[a].bsum) { Cand t = cand[a]; cand[a] = cand[b]; cand[b] = t; } } }
-    int segments_out = 0; const int MAX_TRIGGERS = 1;
+    int segments_out = 0; const int MAX_TRIGGERS = get_env_int("IFETCHER_MAX_TRIGGERS", 3);
     for (int k = 0; k < cand_cnt && segments_out < MAX_TRIGGERS; k++) {
         int i = cand[k].idx; const char* path = cand[k].path; int offset = cand[k].off; int len = cand[k].len; if (len > MAX_LEN_PER_ITEM) len = MAX_LEN_PER_ITEM; char cpath[512]; canonical_path(path, cpath, sizeof(cpath));
         fprintf(ft, "%s,%d,%d\n", cpath, offset, len);
@@ -202,27 +248,17 @@ int main() {
             }
             out_items++; out_bytes += l2;
         }
-        if (out_items == 0) {
-            /* 保底：若窗口过滤后为空，至少追加一个紧随其后的事件作为预取项 */
-            int j = i + 1;
-            if (j < ec) {
-                const char *p2 = NULL; int o2 = 0; int l2 = 0;
-                if (events[j].is_read) { p2 = reads[events[j].idx].file_path; o2 = reads[events[j].idx].offset; l2 = reads[events[j].idx].req_len; }
-                else { p2 = mmaps[events[j].idx].file_path; o2 = mmaps[events[j].idx].file_offset; l2 = mmaps[events[j].idx].size; }
-                if (is_legal_path(p2) && l2 > 0) {
-                    if (l2 > MAX_LEN_PER_ITEM) l2 = MAX_LEN_PER_ITEM;
-                    char cp[512];
-                    canonical_path(p2, cp, sizeof(cp));
-                    if (!assigned_has(cp, o2, l2)) {
-                        fprintf(fp, "%s,%d,%d\n", cp, o2, l2);
-                        assigned_add(cp, o2, l2);
-                        assigned_path_add(cp);
-                    }
-                }
-            }
-        }
         segments_out++;
     }
+
+    fprintf(stderr, "[Analyzer] Events processed: %d\n", ec);
+    fprintf(stderr, "[Analyzer] Rejected by TS: %d\n", rejected_ts);
+    fprintf(stderr, "[Analyzer] Rejected by Len: %d\n", rejected_len);
+    fprintf(stderr, "[Analyzer] Rejected by MmapRule: %d\n", rejected_mmap_rule);
+    fprintf(stderr, "[Analyzer] Rejected by Path: %d\n", rejected_path);
+    fprintf(stderr, "[Analyzer] Rejected by Cooldown: %d\n", rejected_cooldown);
+    fprintf(stderr, "[Analyzer] Candidates found: %d\n", passed_cand);
+    fprintf(stderr, "[Analyzer] Segments generated: %d\n", segments_out);
 
     fclose(ft);
     fclose(fp);

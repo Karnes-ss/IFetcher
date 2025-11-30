@@ -31,7 +31,7 @@ clean_profile
 
 echo "== Step02: Analyze (tight analyzer) =="
 cd "$ROOT/analyzer"
-./analyzer_tight
+IFETCHER_LOG_DIR=/tmp IFETCHER_ALLOW_MMAP_ONLY=1 IFETCHER_MAX_TRIGGERS=${IFETCHER_MAX_TRIGGERS:-1} IFETCHER_PREFETCH_TOP_N=${IFETCHER_PREFETCH_TOP_N:-10} IFETCHER_MAX_PREFETCH_BYTES_KB=${IFETCHER_MAX_PREFETCH_BYTES_KB:-512} IFETCHER_WINDOW_SEC=${IFETCHER_WINDOW_SEC:-5} IFETCHER_READ_THRESHOLD=${IFETCHER_READ_THRESHOLD:-1024} IFETCHER_MIN_READS=${IFETCHER_MIN_READS:-1} IFETCHER_MIN_BYTES=${IFETCHER_MIN_BYTES:-16384} ./analyzer_tight
 awk -F, '$1 !~ "^/(proc|sys|dev)/" {p=$1; cmd="[ -f \""p"\" ]"; if (system(cmd)==0) print}' trigger_log.txt > trigger_log.txt.tmp && mv trigger_log.txt.tmp trigger_log.txt
 
 echo "== Step03: Measure (cold cache, $ITER iterations; interleaving baseline & prefetch) =="
