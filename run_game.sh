@@ -108,7 +108,10 @@ cleanup_env
 echo "== Step 2: Analyzing Logs =="
 cd "$ROOT/analyzer"
 IFETCHER_LOG_DIR=/tmp IFETCHER_ALLOW_MMAP_ONLY=1 IFETCHER_DATA_DIR="$DATA_DIR" IFETCHER_MAX_TRIGGERS=1 IFETCHER_PREFETCH_TOP_N=${IFETCHER_PREFETCH_TOP_N:-32} IFETCHER_MAX_PREFETCH_BYTES_KB=${IFETCHER_MAX_PREFETCH_BYTES_KB:-2048} IFETCHER_WINDOW_SEC=${IFETCHER_WINDOW_SEC:-10} IFETCHER_READ_THRESHOLD=${IFETCHER_READ_THRESHOLD:-512} IFETCHER_MIN_READS=${IFETCHER_MIN_READS:-1} IFETCHER_MIN_BYTES=${IFETCHER_MIN_BYTES:-8192} ./analyzer_tight >/dev/null
-awk -F, '$1 !~ "^/(proc|sys|dev)/" {p=$1; cmd="[ -f \""p"\" ]"; if (system(cmd)==0) print}' trigger_log.txt > trigger_log.txt.tmp && mv trigger_log.txt.tmp trigger_log.txt
+awk -F, '$1 !~ "^/(proc|sys|dev)/" && $1 !~ "data.zip" {p=$1; cmd="[ -f \""p"\" ]"; if (system(cmd)==0) print}' trigger_log.txt > trigger_log.txt.tmp && mv trigger_log.txt.tmp trigger_log.txt
+if [ -f prefetch_log.txt ]; then
+  awk '!/data.zip/' prefetch_log.txt > prefetch_log.txt.tmp && mv prefetch_log.txt.tmp prefetch_log.txt
+fi
 # Optional: select a specific single trigger segment by path
 if [ -n "$SINGLE_TRIGGER_PATH" ]; then
   awk -F, -v sel="$SINGLE_TRIGGER_PATH" '
