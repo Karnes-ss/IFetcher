@@ -13,6 +13,7 @@ DATA_DIR="/usr/share/games/trigger-rally"
 
 TRAIN_SEC=15
 MAX_TIMEOUT=45
+HOLD_SEC=${HOLD_SEC:-3}
 
 # Window detection settings
 WINDOW_NAME_REGEX="[Tt]rigger"
@@ -50,7 +51,7 @@ measure_execution() {
 
     # === FIX APPLIED HERE ===
     # Added "|| true" at the end to prevent script from exiting when process is killed
-    /usr/bin/time -v -o "$LOG_OUT" bash -c "
+    LC_ALL=C /usr/bin/time -v -o "$LOG_OUT" bash -c "
         $RUN_CMD &
         CMD_PID=\$!
         
@@ -67,11 +68,13 @@ measure_execution() {
                 DETECTED=1
                 # Wait a tiny bit for render
                 sleep 0.2
-                
-                # Force kill game
-                kill -9 \$CMD_PID 2>/dev/null || true
-                pkill -9 -x \"$APP_NAME\" 2>/dev/null || true
-                pkill -9 -x \"trigger-rally\" 2>/dev/null || true
+                sleep "$HOLD_SEC"
+                kill -TERM \$CMD_PID 2>/dev/null || true
+                sleep 0.2
+                pkill -TERM -x "$APP_NAME" 2>/dev/null || true
+                pkill -TERM -x "trigger-rally" 2>/dev/null || true
+                pkill -9 -x "$APP_NAME" 2>/dev/null || true
+                pkill -9 -x "trigger-rally" 2>/dev/null || true
                 break
             fi
             sleep 0.1
