@@ -1,208 +1,183 @@
 #!/bin/bash
-set -e
+# Do not exit immediately on error
+set +e 
 
-# ================= CONFIGURATION =================
-SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd || pwd)"
-ROOT="${ROOT:-$SCRIPT_DIR}"
-
+# ================= Configuration =================
 APP_BIN="$(which trigger-rally 2>/dev/null || echo /usr/games/trigger-rally)"
 APP="${APP:-$APP_BIN}"
-if command -v readlink >/dev/null 2>&1; then APP="$(readlink -f "$APP")"; fi
+RESULT_DIR="$(cd "$(dirname "$0")" && pwd)/results"
+mkdir -p "$RESULT_DIR"
+ITERATIONS=3
+PREFETCH_BATCH=32
+export LC_ALL=C
 
-DATA_DIR="/usr/share/games/trigger-rally"
+# ================= Utilities =================
 
-TRAIN_SEC=15
-MAX_TIMEOUT=45
-HOLD_SEC=${HOLD_SEC:-3}
-
-# Window detection settings
-WINDOW_NAME_REGEX="[Tt]rigger"
-WINDOW_CLASS="trigger-rally"
-
-LOG_BASE="$ROOT/result_baseline.log"
-LOG_PREFETCH="$ROOT/result_prefetch.log"
-# =================================================
-
-APP_NAME="$(basename "$APP")"
-
-# 1. Check for xdotool
-if ! command -v xdotool >/dev/null 2>&1; then
-    echo "ERROR: 'xdotool' is not installed! Please run: sudo apt-get install xdotool"
-    exit 1
-fi
-
-# 2. Cleanup Function
 cleanup_env() {
-    # Kill exact process name matches
-    pkill -x "$APP_NAME" 2>/dev/null || true
-    pkill -x "trigger-rally" 2>/dev/null || true
-    # Kill prefetcher specifically
-    pkill -f "prefetcher" 2>/dev/null || true
-    rm -rf "$HOME/.local/share/trigger-rally" "$HOME/.config/trigger-rally" 2>/dev/null || true
+    echo "   [System] Cleaning up RAM & Caches..."
+    pkill -9 -x "trigger-rally" 2>/dev/null
+    pkill -9 -f "prefetcher" 2>/dev/null
+    sudo -v 
+    sync
+    sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    sleep 1.0
 }
 
-# 3. Core Measurement Function
-measure_execution() {
-    local LOG_OUT="$1"
-    shift
-    local RUN_CMD="$@"
-
-    mkdir -p "$(dirname "$LOG_OUT")"
-
-    # === FIX APPLIED HERE ===
-    # Added "|| true" at the end to prevent script from exiting when process is killed
-    LC_ALL=C /usr/bin/time -v -o "$LOG_OUT" bash -c "
-        $RUN_CMD &
-        CMD_PID=\$!
-        
-        DETECTED=0
-        for i in {1..450}; do
-            if ! kill -0 \$CMD_PID 2>/dev/null; then 
-                break
-            fi
-            
-            # Check window
-            if xdotool search --onlyvisible --name \"$WINDOW_NAME_REGEX\" >/dev/null 2>&1 || \
-               xdotool search --onlyvisible --class \"$WINDOW_CLASS\" >/dev/null 2>&1; then
-                
-                DETECTED=1
-                # Wait a tiny bit for render
-                sleep 0.2
-                sleep "$HOLD_SEC"
-                kill -TERM \$CMD_PID 2>/dev/null || true
-                sleep 0.2
-                pkill -TERM -x "$APP_NAME" 2>/dev/null || true
-                pkill -TERM -x "trigger-rally" 2>/dev/null || true
-                pkill -9 -x "$APP_NAME" 2>/dev/null || true
-                pkill -9 -x "trigger-rally" 2>/dev/null || true
-                break
-            fi
-            sleep 0.1
-        done
-        
-        # Cleanup if loop ends
-        kill -9 \$CMD_PID 2>/dev/null || true
-        pkill -9 -x \"$APP_NAME\" 2>/dev/null || true
-    " || true 
+# 强力清理输入缓冲区
+flush_input() {
+    # 循环读取，直到0.1秒内没有任何输入为止
+    while read -r -t 0.1 -n 1000; do :; done
 }
 
-# ================= EXECUTION FLOW =================
+# ================= Main Workflow =================
 
-echo "== Step 0: Global Cleanup & Build =="
-cd "$ROOT"
-rm -f "$LOG_BASE" "$LOG_PREFETCH"
-sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null || true
+echo "=== Trigger Rally Manual Benchmark (Final) ==="
+echo "App: $APP"
 
-# Build
+# Sudo keep-alive
+sudo -v
+( while true; do sudo -v; sleep 60; done; ) &
+SUDO_PID=$!
+trap "kill $SUDO_PID 2>/dev/null" EXIT
+
+# --- Step 0: Check Builds ---
+echo -e "\n[Step 0] Checking builds..."
 (cd profiler && make basic >/dev/null)
 (cd analyzer && make analyzer_tight >/dev/null)
 (cd prefetcher && make >/dev/null)
+
+# --- Step 1: Profiling ---
+echo -e "\n[Step 1] Profiling (Training)..."
 cleanup_env
+echo ">>> Ready to record Trace <<<"
+flush_input
+echo "Press ENTER to launch game for TRAINING. Play once, then close."
+read -r < /dev/tty
 
-echo "== Step 1: Profiling (Training Phase) =="
-cd "$ROOT/profiler"
-sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null || true
-(sleep "$TRAIN_SEC"; printf '\n') | ./proc_monitor --spawn "$APP" >/dev/null 2>&1 || true
-cleanup_env
+cd profiler
+./proc_monitor --spawn "$APP" >/dev/null 2>&1 &
+MON_PID=$!
+cd ..
 
-echo "== Step 2: Analyzing Logs =="
-cd "$ROOT/analyzer"
-IFETCHER_LOG_DIR=/tmp IFETCHER_ALLOW_MMAP_ONLY=1 IFETCHER_DATA_DIR="$DATA_DIR" IFETCHER_MAX_TRIGGERS=1 IFETCHER_PREFETCH_TOP_N=${IFETCHER_PREFETCH_TOP_N:-32} IFETCHER_MAX_PREFETCH_BYTES_KB=${IFETCHER_MAX_PREFETCH_BYTES_KB:-2048} IFETCHER_WINDOW_SEC=${IFETCHER_WINDOW_SEC:-10} IFETCHER_READ_THRESHOLD=${IFETCHER_READ_THRESHOLD:-512} IFETCHER_MIN_READS=${IFETCHER_MIN_READS:-1} IFETCHER_MIN_BYTES=${IFETCHER_MIN_BYTES:-8192} ./analyzer_tight >/dev/null
-awk -F, '$1 !~ "^/(proc|sys|dev)/" && $1 !~ "data.zip" {p=$1; cmd="[ -f \""p"\" ]"; if (system(cmd)==0) print}' trigger_log.txt > trigger_log.txt.tmp && mv trigger_log.txt.tmp trigger_log.txt
-if [ -f prefetch_log.txt ]; then
-  awk '!/data.zip/' prefetch_log.txt > prefetch_log.txt.tmp && mv prefetch_log.txt.tmp prefetch_log.txt
-fi
-# Optional: select a specific single trigger segment by path
-if [ -n "$SINGLE_TRIGGER_PATH" ]; then
-  awk -F, -v sel="$SINGLE_TRIGGER_PATH" '
-    BEGIN{keep=0}
-    /^===TRIGGER===/ {if(keep){exit} getline; split($0,a,","); if(a[1]==sel){keep=1; print "===TRIGGER===" > "prefetch_log.txt.sel"; print $0 >> "prefetch_log.txt.sel"; next} }
-    { if(keep) print >> "prefetch_log.txt.sel" }
-  ' prefetch_log.txt
-  if [ -s prefetch_log.txt.sel ]; then
-    mv prefetch_log.txt.sel prefetch_log.txt
-    echo "$SINGLE_TRIGGER_PATH,0,4096" > trigger_log.txt
-  fi
-fi
-# Fallback: synthesize single trigger when analyzer produced none
-if [ $(grep -cv '^APP=' trigger_log.txt 2>/dev/null || echo 0) -eq 0 ]; then
-  awk 'BEGIN{found=0}
-       /Type:MMAP/ {
-         if(found) next;
-         if (match($0, /File:[^|]*/)) {
-           p=substr($0, RSTART+5, RLENGTH-5);
-           if (p ~ /^\// && index(p, "/maps/")>0) {
-             print p ",0,4096" > "trigger_log.txt";
-             print "===TRIGGER===" > "prefetch_log.txt";
-             print p ",0,4096" >> "prefetch_log.txt";
-             found=1;
-           }
-         }
-       }' /tmp/mmap_log
-fi
+sleep 2
+while pgrep -f "trigger-rally" > /dev/null; do sleep 1; done
+kill -TERM "$MON_PID" 2>/dev/null || true
+wait "$MON_PID" 2>/dev/null || true
 
-echo "== Step 3: Measuring BASELINE =="
-cd "$ROOT"
-sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null || true
-cleanup_env
-measure_execution "$LOG_BASE" "$APP"
-echo "   -> Baseline Finished."
+# --- Step 2: Analyze ---
+echo -e "\n[Step 2] Analyzing Logs..."
+cd analyzer
+rm -f trigger_log.txt prefetch_log.txt
+IFETCHER_LOG_DIR=/tmp IFETCHER_DATA_DIR="/" IFETCHER_PREFETCH_TOP_N=50 \
+./analyzer_tight > analyzer_debug.log 2>&1
+cd ..
 
-echo "== Step 4: Measuring PREFETCHER =="
-cd "$ROOT/prefetcher"
-sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null || true
-cleanup_env
-PREF_CMD="env EVENT_LOOP_POLL_MS=100 PREFETCH_COOLDOWN_MS=0 PREFETCH_TOUCH_KB=1024 PREFETCH_CONCURRENCY=4 PREFETCH_READ_FULL=1 PREFETCH_INCLUDE_TRIGGER=1 PREFETCH_TOP_N=${PREFETCH_TOP_N:-24} ./prefetcher --trigger-log ../analyzer/trigger_log.txt --prefetch-log ../analyzer/prefetch_log.txt --app \"$APP\""
-bash -c "$PREF_CMD" >/dev/null 2>&1 &
-PREF_PID=$!
-sleep 2.0
-cd "$ROOT"
-measure_execution "$LOG_PREFETCH" "$APP"
-kill -TERM "$PREF_PID" 2>/dev/null || true
-pkill -f "prefetcher" 2>/dev/null || true
-echo "   -> Prefetcher Finished."
+# --- Step 3: Benchmark ---
+echo -e "\n[Step 3] Running Benchmarks..."
+SUMMARY_FILE="$RESULT_DIR/summary.csv"
+echo "Type,Run,Time,PageFaults" > "$SUMMARY_FILE"
 
-# ================= REPORTING =================
-echo ""
-echo "========================================================"
-echo "                 PERFORMANCE SUMMARY"
-echo "========================================================"
+run_manual_round() {
+    local TYPE="$1"
+    local RUN_IDX="$2"
+    local PREF_CMD="$3"
 
-get_time_sec() {
-    if [ ! -f "$1" ]; then echo "N/A"; return; fi
-    raw=$(grep "Elapsed (wall clock) time" "$1" | awk '{print $NF}')
-    echo "$raw" | awk -F: '{if(NF==2){print $1*60+$2}else{print $1}}'
+    echo ""
+    echo "=================================================="
+    echo "   Running: $TYPE (Round $RUN_IDX / $ITERATIONS)"
+    echo "=================================================="
+    
+    sudo -v 
+    cleanup_env
+
+    echo "--------------------------------------------------"
+    echo "   WAITING FOR USER..."
+    echo "--------------------------------------------------"
+    
+    # 1. 先清理键盘缓存
+    flush_input
+    
+    # 2. 等待用户按回车
+    echo ">>> READY. Press ENTER to LAUNCH EVERYTHING. <<<"
+    read -r < /dev/tty
+    
+    # ================= 启动区 =================
+    
+    local P_PID=""
+    
+    # A. 如果有预取器，现在立即启动
+    if [ -n "$PREF_CMD" ]; then
+        echo "   -> [Go] Launching Prefetcher..."
+        bash -c "$PREF_CMD" >/dev/null 2>&1 &
+        P_PID=$!
+        sleep 0.1 
+    fi
+
+    # B. 立即启动游戏
+    echo "   -> [Go] Launching Game..."
+    LOG_FILE="$RESULT_DIR/${TYPE}_${RUN_IDX}.log"
+    /usr/bin/time -v -o "$LOG_FILE" "$APP" >/dev/null 2>&1 &
+    local TIME_PID=$!
+    
+    # =========================================
+
+    # 等待游戏窗口出现
+    sleep 2
+    # 循环检查游戏是否还在运行 (Wait for the time wrapper process to exit)
+    while kill -0 "$TIME_PID" 2>/dev/null; do sleep 0.2; done
+    
+    echo "   (Game closed)"
+
+    # 游戏结束后，杀掉预取器
+    if [ -n "$P_PID" ]; then 
+        kill -9 "$P_PID" 2>/dev/null || true
+    fi
+    wait "$TIME_PID" 2>/dev/null || true
+    
+    # 记录数据
+    if [ -f "$LOG_FILE" ]; then
+        ELAPSED=$(grep "Elapsed" "$LOG_FILE" | awk '{print $NF}' | awk -F: '{if(NF==2)print $1*60+$2; else print $1}')
+        FAULTS=$(grep "Major .* page faults" "$LOG_FILE" | awk -F: '{print $2}' | tr -d ' ')
+        echo "   -> Result: ${ELAPSED}s | ${FAULTS} Page Faults"
+        echo "$TYPE,$RUN_IDX,$ELAPSED,$FAULTS" >> "$SUMMARY_FILE"
+    fi
 }
+# === 注意：这里必须要有右大括号结束函数，之前的错误就是缺了这个 ===
 
-get_val() {
-    if [ ! -f "$1" ]; then echo "N/A"; return; fi
-    # $2 是搜索关键词, $3 是冒号分隔后的第几列
-    awk -F: "/$2/{print \$$3}" "$1" | tr -d ' ' | head -n1
-}
+for ((i=1; i<=ITERATIONS; i++)); do
+    # 1. Base (无预取)
+    run_manual_round "Base" "$i" ""
+    
+    # 2. Prefetch (有预取)
+    P_CMD="cd prefetcher && env PREFETCH_CONCURRENCY=4 IFETCHER_PREFETCH_TOP_N=$PREFETCH_BATCH ./prefetcher --trigger-log ../analyzer/trigger_log.txt --prefetch-log ../analyzer/prefetch_log.txt --app \"$APP\""
+    run_manual_round "Prefetch" "$i" "$P_CMD"
+done
 
-# ... 在 Step 4 之后 ...
-
-# 1. 获取时间
-BASE_T=$(get_time_sec "$LOG_BASE")
-PREF_T=$(get_time_sec "$LOG_PREFETCH")
-
-# 2. 获取 Major Page Faults
-BASE_PF=$(get_val "$LOG_BASE" "Major .* page faults" 2)
-PREF_PF=$(get_val "$LOG_PREFETCH" "Major .* page faults" 2)
-
-# 3. [新增] 获取 File System Inputs
-BASE_FS=$(get_val "$LOG_BASE" "File system inputs" 2)
-PREF_FS=$(get_val "$LOG_PREFETCH" "File system inputs" 2)
-
-# --- 打印表格 ---
-printf "%-20s | %-15s | %-15s\n" "Metric" "Baseline" "Prefetcher"
-echo "---------------------|-----------------|-----------------"
-printf "%-20s | %-15s | %-15s\n" "Load Time (sec)" "${BASE_T}s" "${PREF_T}s"
-printf "%-20s | %-15s | %-15s\n" "Major Page Faults" "$BASE_PF" "$PREF_PF"
-printf "%-20s | %-15s | %-15s\n" "File System Inputs" "$BASE_FS" "$PREF_FS" 
-echo "----------------========================================"
-if [[ "$BASE_T" != "N/A" ]] && [[ "$PREF_T" != "N/A" ]]; then
-    SPEEDUP=$(awk "BEGIN {if ($BASE_T > 0) print ($BASE_T - $PREF_T) / $BASE_T * 100; else print 0}")
-    printf ">>> SPEEDUP (Time): %.2f%%\n" "$SPEEDUP"
+# ================= 报告结果 =================
+echo -e "\n========================================================"
+echo "                 FINAL RESULTS"
+echo "========================================================"
+if [ -f "$SUMMARY_FILE" ]; then
+    awk -F, '
+    BEGIN { b_t=0; b_f=0; b_n=0; p_t=0; p_f=0; p_n=0 }
+    NR>1 {
+        if ($1=="Base") { b_t+=$3; b_f+=$4; b_n++ }
+        if ($1=="Prefetch") { p_t+=$3; p_f+=$4; p_n++ }
+    }
+    END {
+        if (b_n==0 || p_n==0) exit;
+        avg_b_t = b_t/b_n; avg_b_f = b_f/b_n;
+        avg_p_t = p_t/p_n; avg_p_f = p_f/p_n;
+        
+        printf "%-15s | %-12s | %-12s | %s\n", "Metric", "Baseline", "Prefetch", "Improvement"
+        print "----------------|--------------|--------------|-------------"
+        
+        diff_t = (avg_b_t - avg_p_t) / avg_b_t * 100
+        printf "%-15s | %-11.2fs | %-11.2fs | %+.2f%%\n", "Time", avg_b_t, avg_p_t, diff_t
+        
+        diff_f = (avg_b_f - avg_p_f) / avg_b_f * 100
+        printf "%-15s | %-12d | %-12d | %+.2f%%\n", "Page Faults", avg_b_f, avg_p_f, diff_f
+    }
+    ' "$SUMMARY_FILE"
 fi
 echo "========================================================"

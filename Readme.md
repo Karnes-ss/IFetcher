@@ -52,7 +52,7 @@ sudo apt install -y procps psmisc
 本项目提供三种不同场景的测试脚本，请根据需求选择：
 
 ### 场景 A: Firefox 浏览器自动化测试 (Headless)
-**脚本**: `run_tight_flow.sh`
+**脚本**: `launch_game.sh`
 **特点**: 无需图形界面 (Headless 模式)，适合快速验证预取器对大型应用启动的影响。
 
 ```bash
@@ -61,7 +61,7 @@ bash run_tight_flow.sh
 ```
 
 ### 场景 B: Trigger Rally 游戏自动化测试
-**脚本**: `run_game.sh`
+**脚本**: `launch_game.sh`
 **特点**: 启动 3D 赛车游戏，使用 `xdotool` 自动检测窗口出现并关闭，模拟真实用户启动过程。
 
 ```bash
@@ -70,7 +70,7 @@ bash run_game.sh
 ```
 
 ### 场景 C: Trigger Rally 游戏手动测试
-**脚本**: `rt_single.sh`
+**脚本**: `run_game.sh`
 **特点**: 需要人工介入操作。适合在自动化脚本失效或需要人工观察启动过程时使用。
 - 脚本运行后会提示用户手动启动游戏进行 Training（训练）。
 - 之后会提示用户手动进行多次启动以测量性能。
