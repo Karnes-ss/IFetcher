@@ -10,15 +10,16 @@
 
 用于编译测试程序及相关依赖。
 
-
-```
+```bash
 sudo apt update && sudo apt install -y build-essential
 # 包含 gcc, make 等
 ```
+
 ### 二、性能计数与监控
 
 用于精确统计时间、缺页中断及文件系统 I/O。
-```
+
+```bash
 # 安装 time 命令 (注意不是 shell 内置的 time)
 sudo apt install -y time
 
@@ -26,34 +27,66 @@ sudo apt install -y time
 sudo apt install -y procps psmisc
 ```
 
-> **注意**: 预取器依赖 Linux 内核的 `inotify` 机制，这通常已内置于现代内核中。开发头文件包含在 `libc6-dev` 中（通常随 `build-essential` 自动安装）。
+### 三、测试目标应用与自动化工具
+
+根据你选择的测试脚本，需要安装相应的应用和工具：
+
+1. **Firefox 测试 (`run_tight_flow.sh`)**:
+   ```bash
+   sudo apt install -y firefox
+   ```
+
+2. **Trigger Rally 游戏测试 (`run_game.sh` / `rt_single.sh`)**:
+   ```bash
+   # 安装游戏本体
+   sudo apt install -y trigger-rally
+   
+   # 安装窗口自动化工具 (仅 run_game.sh 需要)
+   sudo apt install -y xdotool
+   ```
+
+> **注意**: 预取器依赖 Linux 内核的 `inotify` 机制，这通常已内置于现代内核中。
 
 ## 2. 运行测试 (Usage)
 
-本次测试采用 **无 GUI 窗口弹出 (Tight Flow)** 模式，以排除图形界面渲染带来的不确定性干扰，专注于底层 I/O 性能的评估。
+本项目提供三种不同场景的测试脚本，请根据需求选择：
 
-1. 进入项目目录：
-    
-    
-    ```
-    cd IFetcher
-    ```
-    
-2. 执行自动化测试脚本：
-    
-    
-    ```
-    bash run_tight_flow.sh
-    ```
-    
-3. 脚本运行过程中需要 `sudo` 权限以清除缓存（drop caches）和捕获系统级事件，请在提示时输入密码。
-    
+### 场景 A: Firefox 浏览器自动化测试 (Headless)
+**脚本**: `run_tight_flow.sh`
+**特点**: 无需图形界面 (Headless 模式)，适合快速验证预取器对大型应用启动的影响。
+
+```bash
+cd IFetcher
+bash run_tight_flow.sh
+```
+
+### 场景 B: Trigger Rally 游戏自动化测试
+**脚本**: `run_game.sh`
+**特点**: 启动 3D 赛车游戏，使用 `xdotool` 自动检测窗口出现并关闭，模拟真实用户启动过程。
+
+```bash
+cd IFetcher
+bash run_game.sh
+```
+
+### 场景 C: Trigger Rally 游戏手动测试
+**脚本**: `rt_single.sh`
+**特点**: 需要人工介入操作。适合在自动化脚本失效或需要人工观察启动过程时使用。
+- 脚本运行后会提示用户手动启动游戏进行 Training（训练）。
+- 之后会提示用户手动进行多次启动以测量性能。
+
+```bash
+cd IFetcher
+bash rt_single.sh
+```
+
+> **提示**: 所有脚本在运行过程中都需要 `sudo` 权限以清除页面缓存 (drop caches) 和捕获系统级事件，请在提示时输入密码。
 
 ---
 
 ## 3. 结果解读 (Metrics & Interpretation)
 
-脚本运行结束后，终端将输出 8 行核心数据（如下图所示）：
+无论使用哪种脚本，测试结束后都会输出类似格式的对比数据：
 
 - **前 4 行**: **未开启** 预取器时的冷启动数据（Baseline）。
     
