@@ -52,12 +52,12 @@ sudo apt install -y procps psmisc
 本项目提供三种不同场景的测试脚本，请根据需求选择：
 
 ### 场景 A: Firefox 浏览器自动化测试 (Headless)
-**脚本**: `launch_game.sh`
+**脚本**: `launch_firefox.sh`
 **特点**: 无需图形界面 (Headless 模式)，适合快速验证预取器对大型应用启动的影响。
 
 ```bash
 cd IFetcher
-bash run_tight_flow.sh
+bash launch_firefox.sh
 ```
 
 ### 场景 B: Trigger Rally 游戏自动化测试
@@ -66,7 +66,7 @@ bash run_tight_flow.sh
 
 ```bash
 cd IFetcher
-bash run_game.sh
+bash launch_game.sh
 ```
 
 ### 场景 C: Trigger Rally 游戏手动测试
@@ -77,7 +77,7 @@ bash run_game.sh
 
 ```bash
 cd IFetcher
-bash rt_single.sh
+bash run_game.sh
 ```
 
 > **提示**: 所有脚本在运行过程中都需要 `sudo` 权限以清除页面缓存 (drop caches) 和捕获系统级事件，请在提示时输入密码。
